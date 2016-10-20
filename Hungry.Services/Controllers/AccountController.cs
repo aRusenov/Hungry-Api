@@ -16,6 +16,7 @@ using Microsoft.Owin.Security.OAuth;
 using Hungry.Services.Models;
 using Hungry.Services.Providers;
 using Hungry.Services.Results;
+using Hungry.Models;
 
 namespace Hungry.Services.Controllers
 {
@@ -250,7 +251,7 @@ namespace Hungry.Services.Controllers
                 return new ChallengeResult(provider, this);
             }
 
-            ApplicationUser user = await UserManager.FindAsync(new UserLoginInfo(externalLogin.LoginProvider,
+            var user = await UserManager.FindAsync(new UserLoginInfo(externalLogin.LoginProvider,
                 externalLogin.ProviderKey));
 
             bool hasRegistered = user != null;
@@ -328,7 +329,7 @@ namespace Hungry.Services.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
+            var user = new User() { UserName = model.Email, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user, model.Password);
 
@@ -357,7 +358,7 @@ namespace Hungry.Services.Controllers
                 return InternalServerError();
             }
 
-            var user = new ApplicationUser() { UserName = model.Email, Email = model.Email };
+            var user = new User() { UserName = model.Email, Email = model.Email };
 
             IdentityResult result = await UserManager.CreateAsync(user);
             if (!result.Succeeded)

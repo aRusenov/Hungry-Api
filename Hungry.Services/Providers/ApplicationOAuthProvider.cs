@@ -31,7 +31,7 @@ namespace Hungry.Services.Providers
         {
             var userManager = context.OwinContext.GetUserManager<ApplicationUserManager>();
 
-            ApplicationUser user = await userManager.FindAsync(context.UserName, context.Password);
+            var user = await userManager.FindAsync(context.UserName, context.Password);
 
             if (user == null)
             {

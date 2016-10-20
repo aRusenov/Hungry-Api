@@ -285,6 +285,16 @@
     <None Include="Project_Readme.html" />
     <Content Include="Scripts\jquery-1.10.2.min.map" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Hungry.Data\Hungry.Data.csproj">
+      <Project>{bb7a80af-09a9-4260-89b5-354057d8d0de}</Project>
+      <Name>Hungry.Data</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Hungry.Models\Hungry.Models.csproj">
+      <Project>{4a80f38e-e583-42fc-a051-567a82e4542e}</Project>
+      <Name>Hungry.Models</Name>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
@@ -303,7 +313,7 @@
           <AutoAssignPort>True</AutoAssignPort>
           <DevelopmentServerPort>52445</DevelopmentServerPort>
           <DevelopmentServerVPath>/</DevelopmentServerVPath>
-          <IISUrl>http://localhost:52445/</IISUrl>
+          <IISUrl>http://localhost:3000/</IISUrl>
           <NTLMAuthentication>False</NTLMAuthentication>
           <UseCustomServer>False</UseCustomServer>
           <CustomServerUrl>
