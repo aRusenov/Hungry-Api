@@ -1,5 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Hungry.Models
 {
@@ -14,5 +19,9 @@ namespace Hungry.Models
         public int IngredientId { get; set; }
 
         public virtual Ingredient Ingredient { get; set; }
+
+        public string Quantity { get; set; }
+
+        public Measurement Measurement { get; set; }
     }
 }

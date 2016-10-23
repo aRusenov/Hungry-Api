@@ -243,3 +243,5 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/Hungry.Services/temp/uploads
+/Hungry.Sandbox

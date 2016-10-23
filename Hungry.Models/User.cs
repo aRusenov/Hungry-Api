@@ -11,16 +11,24 @@ namespace Hungry.Models
 {
     public class User : IdentityUser
     {
-        private ICollection<User> subscribers;
+        private ICollection<Subscription> subscribedTo;
+        private ICollection<Subscription> subscribers;
         private ICollection<Recipe> recipes;
 
         public User()
         {
-            this.subscribers = new HashSet<User>();
+            this.subscribedTo = new HashSet<Subscription>();
+            this.subscribers = new HashSet<Subscription>();
             this.recipes = new HashSet<Recipe>();
         }
 
-        public virtual ICollection<User> Subscribers
+        public virtual ICollection<Subscription> SubscribedTo
+        {
+            get { return this.subscribedTo; }
+            set { this.subscribedTo = value; }
+        }
+
+        public virtual ICollection<Subscription> Subscribers
         {
             get { return this.subscribers; }
             set { this.subscribers = value; }

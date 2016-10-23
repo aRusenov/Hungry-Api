@@ -1,19 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Hungry.Models
 {
     public class Recipe
     {
-        private ICollection<Ingredient> ingredients;
+        private ICollection<RecipeIngredient> ingredients;
+        private ICollection<RecipeStep> steps;
 
         public Recipe()
         {
-            this.ingredients = new HashSet<Ingredient>();
+            this.ingredients = new HashSet<RecipeIngredient>();
+            this.steps = new HashSet<RecipeStep>();
         }
 
         public int Id { get; set; }
@@ -21,22 +20,34 @@ namespace Hungry.Models
         [Required, MinLength(6), MaxLength(30)]
         public string Title { get; set; }
 
-        [Required, MinLength(10), MaxLength(1000)]
-        public string Content { get; set; }
+        [Required, MinLength(10), MaxLength(100)]
+        public string Description { get; set; }
+
+        [Required, Url]
+        public string PreviewImageUrl { get; set; }
 
         [Required]
         public TimeSpan Preparation { get; set; }
 
         public Difficulty Difficulty { get; set; }
 
-        public string UserId { get; set; }
+        [Required]
+        public string AuthorId { get; set; }
 
-        public virtual User User { get; set; }
+        public virtual User Author { get; set; }
 
-        public virtual ICollection<Ingredient> Ingredients
+        public DateTime CreatedAt { get; set; }
+
+        public virtual ICollection<RecipeIngredient> RecipeIngredients
         {
             get { return this.ingredients; }
             set { this.ingredients = value; }
+        }
+
+        public virtual ICollection<RecipeStep> Steps
+        {
+            get { return this.steps; }
+            set { this.steps = value; }
         }
     }
 }
