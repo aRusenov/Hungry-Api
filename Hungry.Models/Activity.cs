@@ -20,5 +20,7 @@ namespace Hungry.Models
         public string UserId { get; set; }
 
         public virtual User User { get; set; }
+
+        public DateTime CreatedAt { get; set; }
     }
 }

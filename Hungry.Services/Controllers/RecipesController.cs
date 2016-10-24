@@ -23,25 +23,18 @@ namespace Hungry.Services.Controllers
 {
     public class RecipesController : BaseController
     {
-        private IImageUploadService uploadService;
-
-        public RecipesController() : 
-            this(new CloudinaryService(
-                new Cloudinary(
-                    new Account("dliyl7srb", "143939333657351", "St5zcjxFfaFAzmN7RSskqCEziYA")))
-            )
+        public RecipesController(IHungryData data, IBufferedCache cache, IImageUploadService uploadService) 
+            : base(data, cache)
         {
+            this.UploadService = uploadService;
         }
 
-        public RecipesController(IImageUploadService uploadService) : base()
-        {
-            this.uploadService = uploadService;
-        }
+        public IImageUploadService UploadService { get; private set; }
 
         [HttpGet]
         public IHttpActionResult Get(GetRecipesBindingModel model)
         {
-            var recipes = this.hungryData.Recipes.All()
+            var recipes = this.HungryData.Recipes.All()
                 .Select(r => new
                 {
                     Id = r.Id,
@@ -62,7 +55,7 @@ namespace Hungry.Services.Controllers
         [HttpPost, MultipartRequest]
         public async Task<IHttpActionResult> Add()
         {
-            var user = this.hungryData.Users.Find(this.User.Identity.GetUserId());
+            var user = this.HungryData.Users.Find(this.User.Identity.GetUserId());
             if (user == null)
             {
                 return this.Unauthorized();
@@ -103,22 +96,24 @@ namespace Hungry.Services.Controllers
                     }
                 }
 
-                var previewImageUrl = await uploadService.UploadAsync(filePath);
+                filePath = Path.Combine(root, provider.FileData[0].LocalFileName);
+                var previewImageUrl = await UploadService.UploadAsync(filePath);
                 var recipe = this.CreateRecipe(user, model, previewImageUrl);
-                hungryData.Recipes.Add(recipe);
-                hungryData.SaveChanges();
+                HungryData.Recipes.Add(recipe);
+                HungryData.SaveChanges();
 
                 var activity = new Activity
                 {
                     SourceId = recipe.Id,
                     Type = ActivityType.NewRecipe,
-                    User = user
+                    User = user,
+                    CreatedAt = DateTime.Now
                 };
 
-                hungryData.Activities.Add(activity);
-                hungryData.SaveChanges();
+                HungryData.Activities.Add(activity);
+                HungryData.SaveChanges();
 
-                var subscribers = hungryData.Users.All()
+                var subscribers = HungryData.Users.All()
                     .Where(u => u.Id == user.Id)
                     .Select(u => u.Subscribers.Select(s => s.SubscriberId))
                     .FirstOrDefault();
@@ -126,7 +121,7 @@ namespace Hungry.Services.Controllers
                 var activityId = activity.Id.ToString();
                 foreach (var sub in subscribers)
                 {
-                    cache.Add(sub, activityId);
+                    Cache.Add(sub, activityId);
                 }
             }
             finally
@@ -163,7 +158,7 @@ namespace Hungry.Services.Controllers
 
             foreach (var ingredient in model.Ingredients)
             {
-                var ingr = hungryData.Ingredients.All()
+                var ingr = HungryData.Ingredients.All()
                     .Where(i => i.Name == ingredient.Name)
                     .FirstOrDefault();
                 if (ingr == null)
@@ -187,20 +182,20 @@ namespace Hungry.Services.Controllers
         [HttpDelete, Route("api/recipes/delete/{id}")]
         public IHttpActionResult Delete(int id)
         {
-            var user = this.hungryData.Users.Find(this.User.Identity.GetUserId());
+            var user = this.HungryData.Users.Find(this.User.Identity.GetUserId());
             if (user == null)
             {
                 return this.Unauthorized();
             }
 
-            var recipe = this.hungryData.Recipes.Find(id);
+            var recipe = this.HungryData.Recipes.Find(id);
             if (recipe.AuthorId != user.Id)
             {
                 return this.BadRequest("Only recipe author can delete recipe");
             }
 
-            this.hungryData.Recipes.Delete(recipe);
-            this.hungryData.SaveChanges();
+            this.HungryData.Recipes.Delete(recipe);
+            this.HungryData.SaveChanges();
 
             return this.Ok();
         }

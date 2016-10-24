@@ -7,20 +7,14 @@ namespace Hungry.Services.Controllers
 {
     public class BaseController : ApiController
     {
-        protected IHungryData hungryData;
-        protected IBufferedCache cache;
-
-        public BaseController() : this(
-            new HungryData(new HungryContext()),
-            new BufferedRedisCache(3, new RedisClient())
-            )
-        {
-        }
-
         public BaseController(IHungryData data, IBufferedCache cache)
         {
-            this.hungryData = data;
-            this.cache = cache;
+            this.HungryData = data;
+            this.Cache = cache;
         }
+
+        public IHungryData HungryData { get; private set; }
+
+        public IBufferedCache Cache { get; private set; }
     }
 }

@@ -10,31 +10,65 @@ using EntityFramework.Extensions;
 using Hungry.Services.Infrastructure.Cache;
 using ServiceStack.Redis;
 using Hungry.Services.Models.Binding;
+using System.Diagnostics;
+using System.IO;
 
 namespace Hungry.Services.Controllers
 {
     public class UsersController : BaseController
     {
+        public UsersController(IHungryData data, IBufferedCache cache) 
+            : base(data, cache)
+        {
+        }
+
         [Authorize]
         [HttpGet, Route("api/users/feed")]
-        public IHttpActionResult GetFeed(GetFeedBindingModel model)
+        public IHttpActionResult GetFeed([FromUri]GetFeedBindingModel model)
         {
-            var user = this.hungryData.Users.Find(this.User.Identity.GetUserId());
+            var user = this.HungryData.Users.Find(this.User.Identity.GetUserId());
             if (user == null)
             {
                 return this.Unauthorized();
             }
 
-            var activityIds = cache.Get(user.Id, model.Count, model.Page).Select(int.Parse).ToArray();
+            if (model == null)
+            {
+                return this.BadRequest("Invalid model");
+            }
 
-            var activities = hungryData.Activities.All()
-                .Where(a => activityIds.Contains(a.Id))
-                .Select(a => a.SourceId)
-                .ToList();
+            if (!this.ModelState.IsValid)
+            {
+                return this.BadRequest(this.ModelState);
+            }
+
+            int[] activitiesSourceIds;
+            var start = model.Count * model.Page;
+            if (start < Cache.BufferSize)
+            {
+                // Pull activities from cache
+                var activityIds = Cache.Get(user.Id, model.Count, model.Page).Select(int.Parse).ToArray();
+
+                activitiesSourceIds = HungryData.Activities.All()
+                    .Where(a => activityIds.Contains(a.Id))
+                    .Select(a => a.SourceId)
+                    .ToArray();
+            }
+            else
+            {
+                // Fallback to querying DB
+                activitiesSourceIds = HungryData.Activities.All()
+                    .Where(a => a.User.Subscribers.Any(s => s.SubscriberId == user.Id))
+                    .OrderByDescending(a => a.CreatedAt)
+                    .Skip(start)
+                    .Take(model.Count)
+                    .Select(a => a.SourceId)
+                    .ToArray();
+            }
 
             // Perform 1 query per activity type
-            var recipes = hungryData.Recipes.All()
-                .Where(r => activities.Contains(r.Id))
+            var recipes = HungryData.Recipes.All()
+                .Where(r => activitiesSourceIds.Contains(r.Id))
                 .OrderBy(r => r.CreatedAt)
                 .Select(r => new
                 {
@@ -50,13 +84,13 @@ namespace Hungry.Services.Controllers
         [HttpGet]
         public IHttpActionResult GetSubscriptions()
         {
-            var user = this.hungryData.Users.Find(this.User.Identity.GetUserId());
+            var user = this.HungryData.Users.Find(this.User.Identity.GetUserId());
             if (user == null)
             {
                 return this.Unauthorized();
             }
 
-            var subscriptions = hungryData.Subscriptions.All()
+            var subscriptions = HungryData.Subscriptions.All()
                 .Where(s => s.SubscriberId == user.Id)
                 .OrderByDescending(s => s.CreatedAt)
                 .Select(s => new
@@ -74,13 +108,13 @@ namespace Hungry.Services.Controllers
         public IHttpActionResult Subscribe(string userId)
         {
             var currentUserId = this.User.Identity.GetUserId();
-            var subscriber = this.hungryData.Users.Find(currentUserId);
+            var subscriber = this.HungryData.Users.Find(currentUserId);
             if (subscriber == null)
             {
                 return this.Unauthorized();
             }
 
-            var user = this.hungryData.Users.Find(userId);
+            var user = this.HungryData.Users.Find(userId);
             if (user == null)
             {
                 return this.BadRequest("Invalid user");
@@ -96,21 +130,21 @@ namespace Hungry.Services.Controllers
                 return this.BadRequest("Already subscribed");
             }
 
-            hungryData.Subscriptions.Add(new Subscription
+            HungryData.Subscriptions.Add(new Subscription
             {
                 UserId = user.Id,
                 SubscriberId = subscriber.Id,
                 CreatedAt = DateTime.Now
             });
 
-            hungryData.SaveChanges();
+            HungryData.SaveChanges();
 
             return this.Ok();
         }
 
         private bool IsSubscribedTo(User subscriber, User target)
         {
-            return this.hungryData.Users.All()
+            return this.HungryData.Users.All()
                             .Where(u => u.Id == target.Id && u.Subscribers.Any(s => s.SubscriberId == subscriber.Id))
                             .Count() > 0;
         }
@@ -120,8 +154,8 @@ namespace Hungry.Services.Controllers
         public IHttpActionResult Unubscribe(string userId)
         {
             var currentUserId = this.User.Identity.GetUserId();
-            var subscriber = this.hungryData.Users.Find(currentUserId);
-            var target = this.hungryData.Users.Find(userId);
+            var subscriber = this.HungryData.Users.Find(currentUserId);
+            var target = this.HungryData.Users.Find(userId);
             if (target == null)
             {
                 return this.BadRequest("Invalid user");
@@ -132,7 +166,7 @@ namespace Hungry.Services.Controllers
                 return this.BadRequest("Not subscribed");
             }
 
-            hungryData.Subscriptions.All()
+            HungryData.Subscriptions.All()
                 .Where(u => u.UserId == userId && u.SubscriberId == currentUserId)
                 .Delete();
 

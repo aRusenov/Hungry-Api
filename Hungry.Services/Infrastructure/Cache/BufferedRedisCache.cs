@@ -1,8 +1,6 @@
 ﻿using ServiceStack.Redis;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Web;
 
 namespace Hungry.Services.Infrastructure.Cache
 {
@@ -34,7 +32,7 @@ namespace Hungry.Services.Infrastructure.Cache
         public void Add(string key, string value)
         {
             redisClient.PushItemToList(key, value);
-            redisClient.TrimList(key, 0, this.bufferSize);
+            redisClient.TrimList(key, 0, this.bufferSize - 1);
         }
 
         public List<string> Get(string key, int count, int page)

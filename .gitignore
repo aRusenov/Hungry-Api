@@ -245,3 +245,4 @@ ModelManifest.xml
 .fake/
 /Hungry.Services/temp/uploads
 /Hungry.Sandbox
+/Hungry.Services/AppSettingsKeys.config
